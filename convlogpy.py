@@ -5,6 +5,12 @@ from datetime import datetime
 from typing import Any
 from typing import Dict
 
+class ConflictKeyError(Exception):
+    """
+    Key conflict error exception
+    """
+    def __init__(self, *args):
+        super().__init__(*args)
 
 class SingletonType(type):
     _instances = {}
@@ -74,15 +80,27 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
 
         if extra_fields:
             log_entry["fields"] = extra_fields
+            attrs = record.__dict__.keys() & extra_fields.keys()
+            if bool(attrs): # https://docs.python.org/3/library/logging.html#logrecord-attributes
+                raise ConflictKeyError("extra fields dictionary passed in extra should not clash with record keys %s", attrs)
+
 
         if record.levelno is logging.ERROR:
-            log_entry.update(
-                {
+            if 'fields' in log_entry.keys():
+                log_entry['fields'].update(
+                    {
+                        "module": record.module,
+                        "function": record.funcName,
+                        "line": record.lineno,
+                    }
+                )
+            else:
+                log_entry["fields"] = {
                     "module": record.module,
                     "function": record.funcName,
                     "line": record.lineno,
                 }
-            )
+
 
         return log_entry
 
