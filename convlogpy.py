@@ -15,9 +15,9 @@ class SingletonType(type):
         return cls._instances[cls]
 
 
-class PyLogger(logging.Handler, metaclass=SingletonType):
+class ConvLogPy(logging.Handler, metaclass=SingletonType):
     """
-    PyLogger default class
+    ConvLogPy default class
     accordintg to [conventionnal commit](https://www.conventionallogs.org/en/v0.0.1/).
 
     e.g:
@@ -34,12 +34,12 @@ class PyLogger(logging.Handler, metaclass=SingletonType):
     logger.info("User login successful", user_id=123, ip="192.168.1.1")
     """
 
-    def __init__(self, level=logging.DEBUG, scope="application"):
+    def __init__(self, level=logging.DEBUG, scope="application", name:str = None):
         super().__init__(level)
         self.scope = scope
-        self._logger = logging.getLogger(__name__)
+        self._logger = logging.getLogger(__name__ or name)
         self._logger.setLevel(level)
-        self._logger.addHandler(self)
+        self._logger.addHandler(self) # since all the lower level loggers at module level eventually forward their messages to its handlers
         self._logger.handlers = [self]
 
     def emit(self, record: logging.LogRecord):
@@ -124,8 +124,3 @@ class PyLogger(logging.Handler, metaclass=SingletonType):
         record.scope = scope
         setattr(record, "extra", extra)
         self._logger.handle(record)
-
-if __name__ == "__main__":
-    logger = PyLogger(scope="my-scope")
-    logger.info("User login successfull", username="Hello")
-    logger.error("User login failed", username="Bob", name="Jane")

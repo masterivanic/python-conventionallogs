@@ -1,10 +1,6 @@
-Here’s a concise `README.md` you can use:
+# ConvLogPy
 
-***
-
-# PyLogger
-
-`PyLogger` is a lightweight JSON logger built on top of Python’s standard `logging` module. It outputs structured logs to `stdout`, making them easy to parse, search, and aggregate in modern log management systems.
+`ConvLogPy` is a lightweight JSON logger built on top of Python’s standard `logging` module. It outputs structured logs to `stdout`, making them easy to parse, search, and aggregate in modern log management systems.
 
 ## Features
 
@@ -26,9 +22,9 @@ Here’s a concise `README.md` you can use:
 ### Basic example
 
 ```python
-from pylogger import PyLogger
+from convlogpy import ConvLogPy
 
-logger = PyLogger(scope="web-app")
+logger = ConvLogPy(scope="web-app")
 
 logger.info("User login successful", user_id=123, ip="192.168.1.1")
 logger.error("User login failed", username="Bob")
@@ -66,7 +62,7 @@ Example output:
 
 ### Logging methods
 
-`PyLogger` exposes the standard logging methods:
+`ConvLogPy` exposes the standard logging methods:
 
 ```python
 logger.debug("Debug message", foo="bar")
@@ -94,7 +90,7 @@ logger.info("Processing payment", scope="payment-worker", order_id=42)
 
 ## How it works
 
-- `PyLogger` subclasses `logging.Handler` and uses a metaclass-based singleton to ensure only one instance per process.  
+- `ConvLogPy` subclasses `logging.Handler` and uses a metaclass-based singleton to ensure only one instance per process.  
 - `emit` formats `logging.LogRecord` into a JSON-serializable dictionary and writes it to `stdout`.  
 - For `ERROR` level logs, additional metadata (`module`, `function`, `line`) is injected for easier debugging.
 
@@ -103,7 +99,9 @@ logger.info("Processing payment", scope="payment-worker", order_id=42)
 The module includes a simple usage example:
 
 ```bash
-python pylogger.py
+python convlogpy.py
 ```
 
 This will create a logger with `scope="my-scope"` and emit an `INFO` and an `ERROR` log entry.
+
+
