@@ -2,8 +2,10 @@ import json
 import logging
 import sys
 from datetime import datetime
-from typing import Any
+from typing import Any, Callable
 from typing import Dict
+from functools import singledispatchmethod
+
 
 class ConflictKeyError(Exception):
     """
@@ -47,6 +49,7 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
         self._logger.setLevel(level)
         self._logger.addHandler(self) # since all the lower level loggers at module level eventually forward their messages to its handlers
         self._logger.handlers = [self]
+        self.decorated = False
 
     def emit(self, record: logging.LogRecord):
         try:
@@ -103,22 +106,82 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
 
 
         return log_entry
-
-    def debug(self, msg: str, **kwargs) -> None:
+    
+    @singledispatchmethod
+    def debug(self, msg, **kwargs) -> None:
         self._log(logging.DEBUG, msg, **kwargs)
 
+    def _debug(self, msg:str | int, **kwargs) -> None:
+        self._log(logging.DEBUG, msg, **kwargs)
+
+    @debug.register
+    def _(self, msg:str | int, **kwargs) -> Callable[..., Any]:
+        return self._generic_decorator(msg, logging.DEBUG, **kwargs)
+    
+    @singledispatchmethod
     def info(self, msg: str, **kwargs) -> None:
         self._log(logging.INFO, msg, **kwargs)
 
+    def _info(self, msg: str, **kwargs) -> None:
+        self._log(logging.INFO, msg, **kwargs)
+
+    @info.register
+    def _(self, msg:str, **kwargs) -> Callable[..., Any]:
+        return self._generic_decorator(msg, logging.INFO, **kwargs)
+
+    @singledispatchmethod
     def warning(self, msg: str, **kwargs) -> None:
         self._log(logging.WARNING, msg, **kwargs)
 
-    def error(self, msg: str, **kwargs) -> None:
+    def _warning(self, msg: str, **kwargs) -> None:
+        self._log(logging.WARNING, msg, **kwargs)
+
+    @warning.register
+    def _(self, msg:str, **kwargs) -> Callable[..., Any]:
+        return self._generic_decorator(msg, logging.WARNING, **kwargs)
+
+    @singledispatchmethod
+    def error(self, msg:str, **kwargs) -> None:
         self._log(logging.ERROR, msg, **kwargs)
 
-    def critical(self, msg: str, **kwargs) -> None:
+    def _error(self, msg:str, **kwargs) -> None:
+        self._log(logging.ERROR, msg, **kwargs)
+
+    @error.register
+    def _(self, msg:str, **kwargs) -> Callable[..., Any]:
+        return self._generic_decorator(msg, logging.ERROR, **kwargs)
+
+    @singledispatchmethod
+    def critical(self, msg:str, **kwargs) -> None:
         self._log(logging.CRITICAL, msg, **kwargs)
 
+    def _critical(self, msg:str, **kwargs) -> None:
+        self._log(logging.CRITICAL, msg, **kwargs)
+
+    @critical.register
+    def _(self, msg:str, **kwargs) -> Callable[..., Any]:
+        return self._generic_decorator(msg, logging.CRITICAL, **kwargs)
+
+    @singledispatchmethod
+    def exception(self, msg: str, **kwargs) -> None:
+        self._log(logging.ERROR, msg, **kwargs)
+
+    def _exception(self, msg: str, **kwargs) -> None:
+        self._log(logging.ERROR, msg, **kwargs)
+
+    @exception.register
+    def _(self, msg:str, **kwargs) -> Callable[..., Any]:
+        return self._generic_decorator(msg, logging.ERROR, **kwargs)
+
+    def _generic_decorator(self, msg: str, level: int, **kwargs):
+        def decorator(func):
+            def wrapper(*args, **func_kwargs):
+                self._log(level, msg, **kwargs)
+                return func(*args, **func_kwargs)
+            return wrapper
+        return decorator
+
+    
     def _log(self, level: int, msg: str, **kwargs) -> None:
         import inspect
 
