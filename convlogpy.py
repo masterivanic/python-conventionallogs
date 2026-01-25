@@ -2,10 +2,10 @@ import json
 import logging
 import sys
 from datetime import datetime
-from typing import Any, Callable
-from typing import Dict
+from typing import Any, Callable, Dict, Union
 from functools import singledispatchmethod
 
+type LogMessage = Union[str, int]
 
 class ConflictKeyError(Exception):
     """
@@ -111,66 +111,72 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
     def debug(self, msg, **kwargs) -> None:
         self._log(logging.DEBUG, msg, **kwargs)
 
-    def _debug(self, msg:str | int, **kwargs) -> None:
+    def _debug(self, msg:LogMessage, **kwargs) -> None:
         self._log(logging.DEBUG, msg, **kwargs)
 
-    @debug.register
-    def _(self, msg:str | int, **kwargs) -> Callable[..., Any]:
+    @debug.register(str)
+    @debug.register(int)
+    def _(self, msg:LogMessage, **kwargs) -> Callable[..., Any]:
         return self._generic_decorator(msg, logging.DEBUG, **kwargs)
     
     @singledispatchmethod
-    def info(self, msg: str, **kwargs) -> None:
+    def info(self, msg, **kwargs) -> None:
         self._log(logging.INFO, msg, **kwargs)
 
-    def _info(self, msg: str, **kwargs) -> None:
+    def _info(self, msg: LogMessage, **kwargs) -> None:
         self._log(logging.INFO, msg, **kwargs)
 
-    @info.register
-    def _(self, msg:str, **kwargs) -> Callable[..., Any]:
+    @info.register(str)
+    @info.register(int)
+    def _(self, msg:LogMessage, **kwargs) -> Callable[..., Any]:
         return self._generic_decorator(msg, logging.INFO, **kwargs)
 
     @singledispatchmethod
-    def warning(self, msg: str, **kwargs) -> None:
+    def warning(self, msg, **kwargs) -> None:
         self._log(logging.WARNING, msg, **kwargs)
 
-    def _warning(self, msg: str, **kwargs) -> None:
+    def _warning(self, msg:LogMessage, **kwargs) -> None:
         self._log(logging.WARNING, msg, **kwargs)
 
-    @warning.register
-    def _(self, msg:str, **kwargs) -> Callable[..., Any]:
+    @warning.register(str)
+    @warning.register(int)
+    def _(self, msg:LogMessage, **kwargs) -> Callable[..., Any]:
         return self._generic_decorator(msg, logging.WARNING, **kwargs)
 
     @singledispatchmethod
-    def error(self, msg:str, **kwargs) -> None:
+    def error(self, msg, **kwargs) -> None:
         self._log(logging.ERROR, msg, **kwargs)
 
-    def _error(self, msg:str, **kwargs) -> None:
+    def _error(self, msg:LogMessage, **kwargs) -> None:
         self._log(logging.ERROR, msg, **kwargs)
 
-    @error.register
-    def _(self, msg:str, **kwargs) -> Callable[..., Any]:
+    @error.register(str)
+    @error.register(int)
+    def _(self, msg:LogMessage, **kwargs) -> Callable[..., Any]:
         return self._generic_decorator(msg, logging.ERROR, **kwargs)
 
     @singledispatchmethod
-    def critical(self, msg:str, **kwargs) -> None:
+    def critical(self, msg, **kwargs) -> None:
         self._log(logging.CRITICAL, msg, **kwargs)
 
-    def _critical(self, msg:str, **kwargs) -> None:
+    def _critical(self, msg:LogMessage, **kwargs) -> None:
         self._log(logging.CRITICAL, msg, **kwargs)
 
-    @critical.register
-    def _(self, msg:str, **kwargs) -> Callable[..., Any]:
+    @critical.register(str)
+    @critical.register(int)
+    def _(self, msg:LogMessage, **kwargs) -> Callable[..., Any]:
         return self._generic_decorator(msg, logging.CRITICAL, **kwargs)
 
     @singledispatchmethod
-    def exception(self, msg: str, **kwargs) -> None:
+    def exception(self, msg, **kwargs) -> None:
         self._log(logging.ERROR, msg, **kwargs)
 
-    def _exception(self, msg: str, **kwargs) -> None:
+    def _exception(self, msg: LogMessage, **kwargs) -> None:
         self._log(logging.ERROR, msg, **kwargs)
 
-    @exception.register
-    def _(self, msg:str, **kwargs) -> Callable[..., Any]:
+    @exception.register(str)
+    @exception.register(int)
+    def _(self, msg:LogMessage, **kwargs) -> Callable[..., Any]:
         return self._generic_decorator(msg, logging.ERROR, **kwargs)
 
     def _generic_decorator(self, msg: str, level: int, **kwargs):
