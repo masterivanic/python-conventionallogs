@@ -1,3 +1,4 @@
+import inspect
 import json
 import logging
 import sys
@@ -103,8 +104,6 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
                     "function": record.funcName,
                     "line": record.lineno,
                 }
-
-
         return log_entry
     
     @singledispatchmethod
@@ -179,7 +178,8 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
     def _(self, msg:LogMessage, **kwargs) -> Callable[..., Any]:
         return self._generic_decorator(msg, logging.ERROR, **kwargs)
 
-    def _generic_decorator(self, msg: str, level: int, **kwargs):
+
+    def _generic_decorator(self, msg: str, level: int, vars:tuple = (), **kwargs):
         def decorator(func):
             def wrapper(*args, **func_kwargs):
                 self._log(level, msg, **kwargs)
