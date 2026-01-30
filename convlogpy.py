@@ -1,17 +1,18 @@
+import functools
 import inspect
 import json
 import logging
 import sys
 from datetime import datetime
 from typing import Any, Callable, Dict, Union
-from functools import singledispatchmethod
 
 type LogMessage = Union[str, int]
 
 class ConflictKeyError(Exception):
-    """
-    Key conflict error exception
-    """
+    def __init__(self, *args):
+        super().__init__(*args)
+
+class VariableNotFoundException(Exception):
     def __init__(self, *args):
         super().__init__(*args)
 
@@ -106,84 +107,95 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
                 }
         return log_entry
     
-    @singledispatchmethod
-    def debug(self, msg, **kwargs) -> None:
+    def debug(self, msg:LogMessage, **kwargs) -> None:
         self._log(logging.DEBUG, msg, **kwargs)
 
-    def _debug(self, msg:LogMessage, **kwargs) -> None:
-        self._log(logging.DEBUG, msg, **kwargs)
+    def debug_vars(self, variables:list = None, stringify:bool= False) -> Callable[..., Any]:
+        """
+        help to debug variable of arguments of a given function
+        """
 
-    @debug.register(str)
-    @debug.register(int)
-    def _(self, msg:LogMessage, **kwargs) -> Callable[..., Any]:
-        return self._generic_decorator(msg, logging.DEBUG, **kwargs)
-    
-    @singledispatchmethod
-    def info(self, msg, **kwargs) -> None:
+        variables = variables or []
+        locals_vars = {}
+        def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+            signature = inspect.signature(func)
+            arg_names = list(func.__code__.co_varnames)[:func.__code__.co_argcount]
+        
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                bound = signature.bind(*args, **kwargs)
+                bound.apply_defaults()
+                        
+                arg = dict(zip(arg_names, [bound.args[i] for i in range(len(arg_names))]))
+                self.info(f"Arguments of function {func.__name__} passed in input", **arg)
+
+                def profiler(frame, event, arg): # https://stackoverflow.com/questions/40674861/how-to-trace-builtin-functions-in-python
+                    """
+                        #https://docs.python.org/3/library/sys.html#sys.setprofile
+                    """
+                    if event == 'return' and frame.f_code.co_name == func.__name__:
+                        locals_vars.update(frame.f_locals)
+                        for argument in arg_names:
+                            locals_vars.pop(argument, None)
+
+                        filter_arg = list(filter(lambda x: x in locals_vars, variables))
+                        final_dict = {v : locals_vars[v] for v in filter_arg}
+                        self.debug(f"Variables of function {func.__name__}", **final_dict)
+                    return profiler
+                sys.setprofile(profiler)
+                try:
+                    return func(*args, **kwargs)
+                finally:
+                    sys.setprofile(None)
+            return wrapper
+        return decorator
+
+
+    def info(self, msg:LogMessage, **kwargs) -> None:
         self._log(logging.INFO, msg, **kwargs)
 
-    def _info(self, msg: LogMessage, **kwargs) -> None:
-        self._log(logging.INFO, msg, **kwargs)
-
-    @info.register(str)
-    @info.register(int)
-    def _(self, msg:LogMessage, **kwargs) -> Callable[..., Any]:
-        return self._generic_decorator(msg, logging.INFO, **kwargs)
-
-    @singledispatchmethod
-    def warning(self, msg, **kwargs) -> None:
+    def warning(self, msg:LogMessage, **kwargs) -> None:
         self._log(logging.WARNING, msg, **kwargs)
 
-    def _warning(self, msg:LogMessage, **kwargs) -> None:
-        self._log(logging.WARNING, msg, **kwargs)
-
-    @warning.register(str)
-    @warning.register(int)
-    def _(self, msg:LogMessage, **kwargs) -> Callable[..., Any]:
-        return self._generic_decorator(msg, logging.WARNING, **kwargs)
-
-    @singledispatchmethod
-    def error(self, msg, **kwargs) -> None:
+    def error(self, msg:LogMessage, **kwargs) -> None:
         self._log(logging.ERROR, msg, **kwargs)
 
-    def _error(self, msg:LogMessage, **kwargs) -> None:
-        self._log(logging.ERROR, msg, **kwargs)
-
-    @error.register(str)
-    @error.register(int)
-    def _(self, msg:LogMessage, **kwargs) -> Callable[..., Any]:
-        return self._generic_decorator(msg, logging.ERROR, **kwargs)
-
-    @singledispatchmethod
-    def critical(self, msg, **kwargs) -> None:
+    def critical(self, msg:LogMessage, **kwargs) -> None:
         self._log(logging.CRITICAL, msg, **kwargs)
 
-    def _critical(self, msg:LogMessage, **kwargs) -> None:
-        self._log(logging.CRITICAL, msg, **kwargs)
-
-    @critical.register(str)
-    @critical.register(int)
-    def _(self, msg:LogMessage, **kwargs) -> Callable[..., Any]:
-        return self._generic_decorator(msg, logging.CRITICAL, **kwargs)
-
-    @singledispatchmethod
-    def exception(self, msg, **kwargs) -> None:
+    def exception(self, msg: LogMessage, **kwargs) -> None:
         self._log(logging.ERROR, msg, **kwargs)
 
-    def _exception(self, msg: LogMessage, **kwargs) -> None:
-        self._log(logging.ERROR, msg, **kwargs)
-
-    @exception.register(str)
-    @exception.register(int)
-    def _(self, msg:LogMessage, **kwargs) -> Callable[..., Any]:
-        return self._generic_decorator(msg, logging.ERROR, **kwargs)
-
-
-    def _generic_decorator(self, msg: str, level: int, vars:tuple = (), **kwargs):
+   
+    def _generic_decorator(self, vars:tuple = None):
         def decorator(func):
-            def wrapper(*args, **func_kwargs):
-                self._log(level, msg, **kwargs)
-                return func(*args, **func_kwargs)
+            signature = inspect.signature(func)
+            arg_names = list(func.__code__.co_varnames)[:func.__code__.co_argcount]
+
+            def wrapper(*args, **kwargs):
+                bound = signature.bind(*args, **kwargs)
+                bound.apply_defaults()
+
+                arg = dict(zip(arg_names, [bound.args[i] for i in range(len(arg_names))]))
+                self.info(f"Arguments of function {func.__name__} passed in input", **arg)
+
+                locals_vars = {}
+                def tracer(frame, event):
+                    if event == 'line' and frame.f_code.co_name == func.__name__:
+                        locals_vars.update(frame.f_locals)
+                    
+                    if vars:
+                        for var in vars:
+                            if var not in locals_vars:
+                                raise VariableNotFoundException(f"{var} given variable does not exist in {func.__name__} scope")
+                    self.debug(f"Variables of function {func.__name__}", **locals_vars)
+                    sys.settrace(None)
+                    return tracer
+                sys.settrace(tracer)
+                try:
+                    return func(*args, **kwargs)
+                finally:
+                    sys.settrace(None)
             return wrapper
         return decorator
 
