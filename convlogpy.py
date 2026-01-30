@@ -166,40 +166,6 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
     def exception(self, msg: LogMessage, **kwargs) -> None:
         self._log(logging.ERROR, msg, **kwargs)
 
-   
-    def _generic_decorator(self, vars:tuple = None):
-        def decorator(func):
-            signature = inspect.signature(func)
-            arg_names = list(func.__code__.co_varnames)[:func.__code__.co_argcount]
-
-            def wrapper(*args, **kwargs):
-                bound = signature.bind(*args, **kwargs)
-                bound.apply_defaults()
-
-                arg = dict(zip(arg_names, [bound.args[i] for i in range(len(arg_names))]))
-                self.info(f"Arguments of function {func.__name__} passed in input", **arg)
-
-                locals_vars = {}
-                def tracer(frame, event):
-                    if event == 'line' and frame.f_code.co_name == func.__name__:
-                        locals_vars.update(frame.f_locals)
-                    
-                    if vars:
-                        for var in vars:
-                            if var not in locals_vars:
-                                raise VariableNotFoundException(f"{var} given variable does not exist in {func.__name__} scope")
-                    self.debug(f"Variables of function {func.__name__}", **locals_vars)
-                    sys.settrace(None)
-                    return tracer
-                sys.settrace(tracer)
-                try:
-                    return func(*args, **kwargs)
-                finally:
-                    sys.settrace(None)
-            return wrapper
-        return decorator
-
-    
     def _log(self, level: int, msg: str, **kwargs) -> None:
         import inspect
 
