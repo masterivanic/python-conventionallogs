@@ -8,13 +8,11 @@ from datetime import datetime
 from typing import Any, Callable, Dict, Union
 from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
 
-type LogMessage = Union[str, int]
+LogMessage = Union[str, int]
 
 class ConflictKeyError(Exception):
     pass
 
-class VariableNotFoundException(Exception):
-    pass
 
 class SingletonType(type):
     _instances = {}
@@ -69,10 +67,10 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
 
         if console:
             self._logger.addHandler(self)
-        else:
-            self._file_handlers: Dict[str, logging.Handler] = {}
-            self._formatter = Formatter(func=self._format_record)
-            self.setFormatter(self._formatter)
+        
+        self._file_handlers: Dict[str, logging.Handler] = {}
+        self._formatter = Formatter(func=self._format_record)
+        self.setFormatter(self._formatter)
     
     def add_file_handler(
         self,
@@ -324,3 +322,7 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
         record.scope = scope
         setattr(record, "extra", extra)
         self._logger.handle(record)
+
+
+if __name__ == '__main__':
+    print("module")
