@@ -26,10 +26,7 @@
 ## Installation
 
 ```bash
-# If distributed as a package
 pip install convlogpy
-
-# Or simply copy the module into your project
 ```
 
 ## Quick Start
@@ -134,3 +131,19 @@ logger.add_file_handler("logs/error.log", level=40)  # 40 = logging.ERROR
 # Log messages
 logger.info("Application started")
 logger.error("Something went wrong", error_code=500)
+```
+
+## Debug
+
+### Debug function local variables and arguments
+
+```python
+log = convlogpy.ConvLogPy(scope="function.admin")
+@log.debug_vars(['t', 'x', 's']) # Enter only variable you want to retrieve value after function execution, usefull to debugging without modify your function
+def my_function(age=10):
+    x = None
+    t = 1
+    age += 10
+    s = "je suis deja la"
+```
+
