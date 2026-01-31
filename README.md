@@ -1,25 +1,42 @@
+Here's the updated README file with comprehensive documentation for all the new file handling features:
+
 # ConvLogPy
 
-`ConvLogPy` is a lightweight JSON logger built on top of Python’s standard `logging` module. It outputs structured logs to `stdout`, making them easy to parse, search, and aggregate in modern log management systems.
+`ConvLogPy` is a lightweight JSON logger built on top of Python's standard `logging` module. It outputs structured logs to `stdout` and/or files, making them easy to parse, search, and aggregate in modern log management systems.
 
 ## Features
 
-- **Singleton** logger instance per process to ensure consistent configuration  
+- **Singleton** logger instance per process to ensure consistent configuration
 - JSON-formatted logs with:
   - `severity`
   - `scope`
   - `message`
   - `timestamp` (ISO 8601, UTC with `Z` suffix)
-- Optional custom fields under `fields` (e.g. `user_id`, `ip`)  
+- Optional custom fields under `fields` (e.g. `user_id`, `ip`)
 - Automatic enrichment of error logs with:
   - `module`
   - `function`
   - `line`
+- **Flexible file logging** with multiple handler types:
+  - Standard file handler
+  - Size-based rotating file handler
+  - Time-based rotating file handler
+- **Log rotation** with configurable limits
+- **Directory auto-creation** for log files
+- **Variable debugging** decorator for function-level inspection
 
+## Installation
 
-## Usage
+```bash
+# If distributed as a package
+pip install convlogpy
 
-### Basic example
+# Or simply copy the module into your project
+```
+
+## Quick Start
+
+### Basic Example
 
 ```python
 from convlogpy import ConvLogPy
@@ -60,7 +77,9 @@ Example output:
 }
 ```
 
-### Logging methods
+## Core Features
+
+### Logging Methods
 
 `ConvLogPy` exposes the standard logging methods:
 
@@ -70,6 +89,7 @@ logger.info("Info message")
 logger.warning("Warning message", context="auth")
 logger.error("Error message", error_code=500)
 logger.critical("Critical issue", system="payments")
+logger.exception("Exception occurred", traceback=exc_info)
 ```
 
 All keyword arguments passed to these methods are added under the `fields` key.
@@ -79,7 +99,7 @@ All keyword arguments passed to these methods are added under the `fields` key.
 You can set a default **scope** at initialization:
 
 ```python
-logger = PyLogger(scope="billing-service")
+logger = ConvLogPy(scope="billing-service")
 ```
 
 You can also override it per log call:
@@ -88,20 +108,31 @@ You can also override it per log call:
 logger.info("Processing payment", scope="payment-worker", order_id=42)
 ```
 
-## How it works
+### Console vs File Logging
 
-- `ConvLogPy` subclasses `logging.Handler` and uses a metaclass-based singleton to ensure only one instance per process.  
-- `emit` formats `logging.LogRecord` into a JSON-serializable dictionary and writes it to `stdout`.  
-- For `ERROR` level logs, additional metadata (`module`, `function`, `line`) is injected for easier debugging.
+By default, logs go to stdout. You can disable console output:
 
-## Running the example
+```python
+# Disable console logging
+logger = ConvLogPy(scope="service", console=False)
 
-The module includes a simple usage example:
-
-```bash
-python convlogpy.py
+# Add file handlers only
+logger.add_file_handler("app.log")
 ```
 
-This will create a logger with `scope="my-scope"` and emit an `INFO` and an `ERROR` log entry.
+## File Logging
 
+### Basic File Handler
 
+```python
+logger = ConvLogPy(scope="my-app", console=False)
+
+# Add a simple file handler
+logger.add_file_handler("logs/app.log")
+
+# Add error-only logs to separate file
+logger.add_file_handler("logs/error.log", level=40)  # 40 = logging.ERROR
+
+# Log messages
+logger.info("Application started")
+logger.error("Something went wrong", error_code=500)
