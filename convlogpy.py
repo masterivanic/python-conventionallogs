@@ -5,7 +5,8 @@ import logging
 from pathlib import Path
 import sys
 from datetime import datetime
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, Union
+from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
 
 type LogMessage = Union[str, int]
 
@@ -59,8 +60,8 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
     logger.info("User login successful", user_id=123, ip="192.168.1.1")
     """
 
-    def __init__(self, level=logging.DEBUG, scope="application", name:str = None, console = True):
-        super().__init__(level)
+    def __init__(self, scope="application", name:str = None, console = True, level:int = logging.NOTSET):
+        super().__init__(level=level)
         self.scope = scope
         self._logger = logging.getLogger(__name__ or name)
         self._logger.setLevel(level)
@@ -76,7 +77,7 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
     def add_file_handler(
         self,
         filepath: Union[str, Path],
-        level: Optional[int] = None,
+        level: int = logging.NOTSET,
         delay: bool = False
     ) -> None:
         filepath = Path(filepath)
@@ -87,7 +88,6 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
             mode="a",
             delay=delay
         )
-        
         handler.setLevel(self._logger.level or level)
         handler.setFormatter(self._formatter)
         self._logger.addHandler(handler)
@@ -98,7 +98,7 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
         filepath: Union[str, Path],
         max_bytes: int = 30 * 1024 * 1024,
         backup_count: int = 5,
-        level: Optional[int] = None,
+        level: int = logging.NOTSET,
         encoding: str = 'utf-8',
         delay: bool = False
     ) -> None:
@@ -113,10 +113,9 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
             encoding: File encoding
             delay: If True, file opening is deferred until first log
         """
-        from logging.handlers import RotatingFileHandler
         
         filepath = Path(filepath)
-        
+    
         filepath.parent.mkdir(parents=True, exist_ok=True)
         handler = RotatingFileHandler(
             filename=str(filepath),
@@ -154,8 +153,6 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
             delay: If True, file opening is deferred until first log
             utc: Use UTC time for rotation
         """
-        from logging.handlers import TimedRotatingFileHandler
-        
         filepath = Path(filepath)
         filepath.parent.mkdir(parents=True, exist_ok=True)
         

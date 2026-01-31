@@ -1,5 +1,3 @@
-Here's the updated README file with comprehensive documentation for all the new file handling features:
-
 # ConvLogPy
 
 `ConvLogPy` is a lightweight JSON logger built on top of Python's standard `logging` module. It outputs structured logs to `stdout` and/or files, making them easy to parse, search, and aggregate in modern log management systems.
