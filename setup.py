@@ -10,9 +10,9 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/masterivanic/python-conventionallogs",
     packages=find_packages(),
-    classifiers= [
-       "Programming Language :: Python :: 3",
-        "Operating System :: OS Independent", 
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "Operating System :: OS Independent",
     ],
-    py_modules=["convlogpy"]
+    py_modules=["convlogpy"],
 )
