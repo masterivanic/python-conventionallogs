@@ -26,7 +26,7 @@
 ## Installation
 
 ```bash
-pip install convlogpy
+pip install ConvLogPy
 ```
 
 ## Quick Start
