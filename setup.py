@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="ConvLogPy",
-    version="0.1",
+    name="convlogpy",
+    version="0.1.1",
     author="masterivanic",
     maintainer="masterivanic",
     description="A python logger build on top of logging base in conventionallogs",
