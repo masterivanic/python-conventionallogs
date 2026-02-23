@@ -256,11 +256,20 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
     def debug(self, msg: LogMessage, **kwargs) -> None:
         self._log(logging.DEBUG, msg, **kwargs)
 
+    def stringify_usupported_json_object(self, variable_value):
+        if hasattr(variable_value, "__dict__"):
+            return variable_value.__str__()
+        if isinstance(variable_value, set):
+            return list(variable_value)
+        return variable_value
+
     def debug_vars(
         self, variables: list = None, stringify: bool = False
     ) -> Callable[..., Any]:
         """
         help to debug variable of arguments of a given function
+
+        **Note:** for debug class instance it's recommaneded to override __str__ method
         """
 
         variables = variables or []
@@ -276,7 +285,13 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
                 bound.apply_defaults()
 
                 arg = dict(
-                    zip(arg_names, [bound.args[i] for i in range(len(arg_names))])
+                    zip(
+                        arg_names,
+                        [
+                            self.stringify_usupported_json_object(bound.args[i])
+                            for i in range(len(arg_names))
+                        ],
+                    )
                 )
                 self.info(
                     f"Arguments of function {func.__name__} passed in input", **arg
@@ -296,7 +311,10 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
                         filter_vars = list(
                             filter(lambda x: x in locals_vars, variables)
                         )
-                        result = {v: locals_vars[v] for v in filter_vars}
+                        result = {
+                            v: self.stringify_usupported_json_object(locals_vars[v])
+                            for v in filter_vars
+                        }
                         self.debug(f"Variables of function {func.__name__}", **result)
                     return profiler
 
