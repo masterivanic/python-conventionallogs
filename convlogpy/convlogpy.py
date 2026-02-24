@@ -256,7 +256,7 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
     def debug(self, msg: LogMessage, **kwargs) -> None:
         self._log(logging.DEBUG, msg, **kwargs)
 
-    def stringify_usupported_json_object(self, variable_value):
+    def stringify_unsupported_json_object(self, variable_value):
         if hasattr(variable_value, "__dict__"):
             return variable_value.__str__()
         if isinstance(variable_value, set):
@@ -269,7 +269,7 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
         """
         help to debug variable of arguments of a given function
 
-        **Note:** for debug class instance it's recommaneded to override __str__ method
+        **Note:** for debug class instance it's recommanded to override __str__ method
         """
 
         variables = variables or []
@@ -288,7 +288,7 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
                     zip(
                         arg_names,
                         [
-                            self.stringify_usupported_json_object(bound.args[i])
+                            self.stringify_unsupported_json_object(bound.args[i])
                             for i in range(len(arg_names))
                         ],
                     )
@@ -312,7 +312,7 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
                             filter(lambda x: x in locals_vars, variables)
                         )
                         result = {
-                            v: self.stringify_usupported_json_object(locals_vars[v])
+                            v: self.stringify_unsupported_json_object(locals_vars[v])
                             for v in filter_vars
                         }
                         self.debug(f"Variables of function {func.__name__}", **result)
