@@ -269,7 +269,7 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
         """
         help to debug variable of arguments of a given function
 
-        **Note:** for debug class instance it's recommanded to override __str__ method
+        **Note:** for debug class instance it's recommended to override __str__ method
         """
 
         variables = variables or []
@@ -344,8 +344,6 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
         self._log(logging.ERROR, msg, **kwargs)
 
     def _log(self, level: int, msg: str, **kwargs) -> None:
-        import inspect
-
         extra = kwargs.copy()
         scope = kwargs.get("scope", self.scope)
 

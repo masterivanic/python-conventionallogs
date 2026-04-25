@@ -1,3 +1,31 @@
 [build-system]
 requires = ["setuptools >= 75.6.0", "wheel >= 0.45.1"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "convlogpy"
+dynamic = ["version"]
+authors = [
+    {name = "masterivanic", email = "masterivanic@gmail.com"},
+]
+maintainers = [
+    {name = "masterivanic", email = "masterivanic@gmail.com"},
+]
+description = "A python logger build on top of logging base in conventionallogs"
+readme = "README.md"
+license = {text = "MIT"}  
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+urls = {Homepage = "https://github.com/masterivanic/python-conventionallogs"}
+
+[tool.setuptools]
+py-modules = ["convlogpy"]
+
+[tool.setuptools.packages.find]
+include = ["convlogpy*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "convlogpy.__version__"}
