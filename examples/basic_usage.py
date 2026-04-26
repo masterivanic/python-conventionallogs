@@ -1,4 +1,5 @@
 import logging
+
 from convlogpy.convlogpy import ConvLogPy
 
 
@@ -24,7 +25,9 @@ def main():
     rotating_logger = ConvLogPy(scope="rotating-example", console=False)
 
     rotating_logger.add_rotating_file_handler(
-        "rotating.log", max_bytes=1024, backup_count=3
+        "rotating.log",
+        max_bytes=1024,
+        backup_count=3,
     )
 
     for i in range(10):
@@ -61,10 +64,13 @@ def main():
     error_logger = ConvLogPy(scope="error-example")
 
     try:
-        10 / 0
+        value = 10 / 0
     except ZeroDivisionError:
         error_logger.exception(
-            "Division by zero occurred", dividend=10, divisor=0, operation="division"
+            "Division by zero occurred",
+            dividend=10,
+            divisor=0,
+            operation="division",
         )
 
 

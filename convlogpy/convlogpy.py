@@ -2,11 +2,11 @@ import functools
 import inspect
 import json
 import logging
-from pathlib import Path
 import sys
 from datetime import datetime
-from typing import Any, Callable, Dict, Union
 from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
+from pathlib import Path
+from typing import Any, Callable, Union
 
 LogMessage = Union[str, int]
 
@@ -38,14 +38,14 @@ class Formatter(logging.Formatter):
         try:
             log_entry = self._formatter(record)
             return json.dumps(log_entry)
-        except Exception:
+        except Exception:  # noqa: BLE001
             return json.dumps(
                 {
                     "severity": "ERROR",
                     "scope": "logger",
                     "message": f"Failed to format log record: {record.getMessage()}",
                     "timestamp": datetime.now().isoformat() + "Z",
-                }
+                },
             )
 
 
@@ -70,21 +70,22 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
 
     def __init__(
         self,
-        scope="application",
-        name: str = None,
-        console=True,
+        scope: str = "application",
+        name: Union[str, None] = None,
+        console: bool = True,
         level: int = logging.NOTSET,
     ):
         super().__init__(level=level)
         self.scope = scope
         self._logger = logging.getLogger(__name__ or name)
         self._logger.setLevel(level)
-        self._logger.handlers = []  # since all the lower level loggers at module level eventually forward their messages to its handlers
+        # Clear existing handlers since lower level loggers will forward to this logger
+        self._logger.handlers = []
 
         if console:
             self._logger.addHandler(self)
 
-        self._file_handlers: Dict[str, logging.Handler] = {}
+        self._file_handlers: dict[str, logging.Handler] = {}
         self._formatter = Formatter(func=self._format_record)
         self.setFormatter(self._formatter)
 
@@ -202,10 +203,10 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
             self.stream = sys.stdout
             self.stream.write(msg + "\n")
             self.flush()
-        except Exception:
+        except Exception:  # noqa: BLE001
             self.handleError(record)
 
-    def _format_record(self, record: logging.LogRecord) -> Dict[str, Any]:
+    def _format_record(self, record: logging.LogRecord) -> dict[str, Any]:
         severity_map = {
             logging.DEBUG: "DEBUG",
             logging.INFO: "INFO",
@@ -229,21 +230,20 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
             log_entry["fields"] = extra_fields
             attrs = record.__dict__.keys() & extra_fields.keys()
             if bool(
-                attrs
-            ):  # https://docs.python.org/3/library/logging.html#logrecord-attributes
-                raise ConflictKeyError(
-                    "extra fields dictionary passed in extra should not clash with record keys %s",
-                    attrs,
-                )
+                attrs,
+            ):
+                # https://docs.python.org/3/library/logging.html#logrecord-attributes
+                msg = f"Extra dict keys clash with record keys: {attrs}"
+                raise ConflictKeyError(msg)
 
         if record.levelno is logging.ERROR:
-            if "fields" in log_entry.keys():
+            if "fields" in log_entry:
                 log_entry["fields"].update(
                     {
                         "module": record.module,
                         "function": record.funcName,
                         "line": record.lineno,
-                    }
+                    },
                 )
             else:
                 log_entry["fields"] = {
@@ -256,7 +256,7 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
     def debug(self, msg: LogMessage, **kwargs) -> None:
         self._log(logging.DEBUG, msg, **kwargs)
 
-    def stringify_unsupported_json_object(self, variable_value):
+    def stringify_unsupported_json_object(self, variable_value: Any):
         if hasattr(variable_value, "__dict__"):
             return variable_value.__str__()
         if isinstance(variable_value, set):
@@ -264,7 +264,9 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
         return variable_value
 
     def debug_vars(
-        self, variables: list = None, stringify: bool = False
+        self,
+        variables: list = None,
+        stringify: bool = False,
     ) -> Callable[..., Any]:
         """
         help to debug variable of arguments of a given function
@@ -291,14 +293,17 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
                             self.stringify_unsupported_json_object(bound.args[i])
                             for i in range(len(arg_names))
                         ],
-                    )
+                    ),
                 )
                 self.info(
-                    f"Arguments of function {func.__name__} passed in input", **arg
+                    f"Arguments of function {func.__name__} passed in input",
+                    **arg,
                 )
 
                 def profiler(
-                    frame, event, arg
+                    frame,
+                    event,
+                    arg,
                 ):  # https://stackoverflow.com/questions/40674861/how-to-trace-builtin-functions-in-python
                     """
                     #https://docs.python.org/3/library/sys.html#sys.setprofile
@@ -309,7 +314,7 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
                             locals_vars.pop(argument, None)
 
                         filter_vars = list(
-                            filter(lambda x: x in locals_vars, variables)
+                            filter(lambda x: x in locals_vars, variables),
                         )
                         result = {
                             v: self.stringify_unsupported_json_object(locals_vars[v])
@@ -362,5 +367,5 @@ class ConvLogPy(logging.Handler, metaclass=SingletonType):
             sinfo=None,
         )
         record.scope = scope
-        setattr(record, "extra", extra)
+        record.extra = extra
         self._logger.handle(record)

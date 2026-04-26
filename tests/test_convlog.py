@@ -1,9 +1,10 @@
+import io
 import json
 import tempfile
 import unittest
-import io
 from pathlib import Path
 from unittest.mock import patch
+
 from convlogpy.convlogpy import ConvLogPy
 
 
@@ -100,7 +101,7 @@ class TestConvLogPy(unittest.TestCase):
             logger.add_file_handler(log_file)
             logger.info("File test message", test="file")
 
-            with open(log_file, "r") as f:
+            with Path.open(log_file) as f:
                 lines = f.readlines()
 
             self.assertGreater(len(lines), 0)
@@ -116,7 +117,7 @@ class TestConvLogPy(unittest.TestCase):
             logger.add_rotating_file_handler(log_file, max_bytes=100, backup_count=2)
 
             for i in range(10):
-                logger.info(f"Message {i}", index=i)
+                logger.info(f"Message {i}")
 
             base_files = list(Path(tmpdir).glob("rotating.log*"))
             self.assertGreater(len(base_files), 1)

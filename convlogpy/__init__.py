@@ -1,5 +1,6 @@
-from .convlogpy import ConvLogPy, ConflictKeyError, Formatter
 import importlib.metadata
+
+from .convlogpy import ConflictKeyError, ConvLogPy, Formatter
 
 try:
     __version__ = importlib.metadata.version(__name__)
